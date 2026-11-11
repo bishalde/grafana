@@ -145,11 +145,12 @@ func (s *MetaStorage) List(ctx context.Context, options *internalversion.ListOpt
 				ParentID: plugin.Spec.ParentId,
 			})
 			if err != nil {
-				reason := "error"
 				if errors.Is(err, meta.ErrMetaNotFound) {
-					reason = "not_found"
+					metrics.MetaResolutionFailuresTotal.WithLabelValues(plugin.Spec.Id, "not_found").Inc()
+					logger.Debug("Plugin metadata not found", "pluginId", plugin.Spec.Id, "version", plugin.Spec.Version)
+					return nil
 				}
-				metrics.MetaResolutionFailuresTotal.WithLabelValues(plugin.Spec.Id, reason).Inc()
+				metrics.MetaResolutionFailuresTotal.WithLabelValues(plugin.Spec.Id, "error").Inc()
 				logger.Warn("Failed to fetch metadata for plugin", "pluginId", plugin.Spec.Id, "version", plugin.Spec.Version, "error", err)
 				return nil
 			}
